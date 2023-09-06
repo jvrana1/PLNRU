@@ -105,12 +105,12 @@ def signup():
 # Route for account creation success
 @app.route('/account_created')
 def account_created():
-    return render_template('success.html')
+    return redirect("https://jvrana1.github.io/PLNRU.github.io/success")
 
 # Route for account creation failure
 @app.route('/account_creation_failed')
 def account_creation_failed():
-    return render_template('failure.html')
+    return redirect("https://jvrana1.github.io/PLNRU.github.io/failure")
 
 if __name__ == '__main__':
     app.run(debug=True)
