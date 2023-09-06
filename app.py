@@ -64,6 +64,7 @@ def index():
 @app.route('/signup', methods=['POST'])
 def signup():
     # Get user input from the registration form
+    username = request.form['username']
     first_name = request.form['first_name']
     last_name = request.form['last_name']
     college = request.form['college']
