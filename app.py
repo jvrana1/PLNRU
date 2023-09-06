@@ -13,11 +13,11 @@ GMAIL_USERNAME = 'your@gmail.com'
 GMAIL_PASSWORD = 'your_password'
 
 # Replace with your database connection details
-DB_HOST = 'your_db_host'
-DB_PORT = 'your_db_port'
-DB_NAME = 'your_db_name'
-DB_USER = 'your_db_user'
-DB_PASSWORD = 'your_db_password'
+DB_HOST = 'plnru2.c3omnzoqavtp.us-east-2.rds.amazonaws.com'
+DB_PORT = '1433'
+DB_NAME = 'PLNRU'
+DB_USER = 'admin'
+DB_PASSWORD = 'ISDS4125'
 
 # Function to send an email with a temporary password
 def send_email(username, temp_password, recipient_email):
@@ -75,7 +75,7 @@ def signup():
     try:
         connection = psycopg2.connect(
             host='plnru2.c3omnzoqavtp.us-east-2.rds.amazonaws.com',
-            port=1433,
+            port='1433',
             database='PLNRU',
             user='admin',
             password='ISDS4125'
