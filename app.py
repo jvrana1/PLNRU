@@ -65,21 +65,20 @@ def index():
 def signup():
     # Get user input from the registration form
     username = request.form['username']
+    password = request.form['password']  # Added password field
     first_name = request.form['first_name']
     last_name = request.form['last_name']
     college = request.form['college']
     email = request.form['email']
 
-    # Generate a temporary password
-    temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+    # TODO: Store user information in the database, including the username and password
 
-    # TODO: Store user information in the database
+    # You should securely hash and store the password in the database.
+    # NEVER store passwords in plain text.
 
-    # Send the temporary password via email
-    if send_email(first_name, temp_password, email):
-        return "Account created successfully. Check your email for the temporary password."
-    else:
-        return "Account creation failed. Please try again."
+    # Send a confirmation email or perform any other necessary actions.
+
+    return "Account created successfully. You can now log in."
 
 # Route for password reset
 @app.route('/reset', methods=['POST'])
