@@ -65,20 +65,40 @@ def index():
 def signup():
     # Get user input from the registration form
     username = request.form['username']
-    password = request.form['password']  # Added password field
+    password = request.form['password']
     first_name = request.form['first_name']
     last_name = request.form['last_name']
     college = request.form['college']
     email = request.form['email']
 
-    # TODO: Store user information in the database, including the username and password
+    # Connect to the AWS RDS database
+    try:
+        connection = psycopg2.connect(
+            host='plnru2.c3omnzoqavtp.us-east-2.rds.amazonaws.com',
+            port=1433,
+            database='PLNRU',
+            user='admin',
+            password='ISDS4125'
+        )
+        
+        cursor = connection.cursor()
 
-    # You should securely hash and store the password in the database.
-    # NEVER store passwords in plain text.
+        # Insert user information into the "users" table
+        insert_query = """
+        INSERT INTO users (username, password, firstName, lastName, college, email)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        cursor.execute(insert_query, (username, password, first_name, last_name, college, email))
 
-    # Send a confirmation email or perform any other necessary actions.
+        # Commit the transaction and close the database connection
+        connection.commit()
+        cursor.close()
+        connection.close()
 
-    return "Account created successfully. You can now log in."
+        return "Account created successfully. You can now log in."
+    except Exception as e:
+        print(str(e))
+        return "Account creation failed. Please try again."
 
 # Route for password reset
 @app.route('/reset', methods=['POST'])
