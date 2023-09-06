@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, redirect, url_for
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -95,10 +95,25 @@ def signup():
         cursor.close()
         connection.close()
 
-        return "Account created successfully. You can now log in."
+        # Redirect to the success page
+        return redirect(url_for('account_created'))
     except Exception as e:
         print(str(e))
-        return "Account creation failed. Please try again."
+        # Redirect to the failure page
+        return redirect(url_for('account_creation_failed'))
+
+# Route for account creation success
+@app.route('/account_created')
+def account_created():
+    return render_template('success.html')
+
+# Route for account creation failure
+@app.route('/account_creation_failed')
+def account_creation_failed():
+    return render_template('failure.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)
 
 # Route for password reset
 @app.route('/reset', methods=['POST'])
