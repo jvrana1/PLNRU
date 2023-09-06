@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Authentication</title>
+</head>
+<body>
+    <h1>Login</h1>
+    <form action="/login" method="post">
+        Username: <input type="text" name="username" required><br>
+        Password: <input type="password" name="password" required><br>
+        <input type="submit" value="Login">
+    </form>
+
+    <h1>Create Account</h1>
+    <form action="/signup" method="post">
+        First Name: <input type="text" name="first_name" required><br>
+        Last Name: <input type="text" name="last_name" required><br>
+        College: <input type="text" name="college" required><br>
+        Email: <input type="email" name="email" required><br>
+        <input type="submit" value="Sign Up">
+    </form>
+
+    <h1>Reset Password</h1>
+    <form action="/reset" method="post">
+        Username: <input type="text" name="reset_username" required><br>
+        <input type="submit" value="Reset Password">
+    </form>
+</body>
+</html>
