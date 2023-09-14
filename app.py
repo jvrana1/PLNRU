@@ -1,138 +1,169 @@
-from flask import Flask, request, render_template, redirect, url_for
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-import random
-import string
-import psycopg2  # For PostgreSQL database
+# app.py
 
-app = Flask(__name__)
+from flask import Flask, render_template, request, redirect, flash, url_for, session
+from flask_session import Session # Import Flask-Session extension
+from app.models import db, User, Task  # Import your User and Task models
+from app.config import Config  # Import your Config class
 
-# Replace these values with your Gmail credentials
-GMAIL_USERNAME = 'your@gmail.com'
-GMAIL_PASSWORD = 'your_password'
+app = Flask(__name__, template_folder="app/templates")
 
-# Replace with your database connection details
-DB_HOST = 'plnru2.c3omnzoqavtp.us-east-2.rds.amazonaws.com'
-DB_PORT = '1433'
-DB_NAME = 'PLNRU'
-DB_USER = 'admin'
-DB_PASSWORD = 'ISDS4125'
+# Load the configuration settings defined in the Config class
+app.config.from_object(Config)
 
-# Function to send an email with a temporary password
-def send_email(username, temp_password, recipient_email):
-    try:
-        msg = MIMEMultipart()
-        msg['From'] = GMAIL_USERNAME
-        msg['To'] = recipient_email
-        msg['Subject'] = 'Password Reset'
+# Initialize the SQLAlchemy database with the Flask app
+db.init_app(app)
 
-        message = f'Your temporary password is: {temp_password}'
-        msg.attach(MIMEText(message, 'plain'))
+# Initialize the Flask-Session extension
+app.config['SESSION_TYPE'] = 'filesystem'  # You can configure the session type as needed
+Session(app)
 
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(GMAIL_USERNAME, GMAIL_PASSWORD)
-        server.sendmail(GMAIL_USERNAME, recipient_email, msg.as_string())
-        server.quit()
-        return True
-    except Exception as e:
-        print(str(e))
-        return False
+# Your other configuration settings...
 
-# Database connection function
-def connect_db():
-    try:
-        connection = psycopg2.connect(
-            host=DB_HOST,
-            port=DB_PORT,
-            database=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD
-        )
-        return connection
-    except Exception as e:
-        print(str(e))
-        return None
+# Define your routes here
 
-# Route for the index page
-@app.route('/', methods=['GET'])
-def index():
-    return render_template('index.html')
+# Define the is_user_logged_in function
+def is_user_logged_in():
+    return 'user_id' in session  # Check if the 'user_id' is present in the session
 
-# Route for user registration
-@app.route('/signup', methods=['POST'])
-def signup():
-    # Get user input from the registration form
-    username = request.form['username']
-    password = request.form['password']
-    first_name = request.form['first_name']
-    last_name = request.form['last_name']
-    college = request.form['college']
-    email = request.form['email']
-
-    # Connect to the AWS RDS database
-    try:
-        connection = psycopg2.connect(
-            host='plnru2.c3omnzoqavtp.us-east-2.rds.amazonaws.com',
-            port='1433',
-            database='PLNRU',
-            user='admin',
-            password='ISDS4125'
-        )
-        
-        cursor = connection.cursor()
-
-        # Insert user information into the "users" table
-        insert_query = """
-        INSERT INTO users (username, password, firstName, lastName, college, email)
-        VALUES (%s, %s, %s, %s, %s, %s)
-        """
-        cursor.execute(insert_query, (username, password, first_name, last_name, college, email))
-
-        # Commit the transaction and close the database connection
-        connection.commit()
-        cursor.close()
-        connection.close()
-
-        # Redirect to the success page
-        return redirect(url_for('account_created'))
-    except Exception as e:
-        print(str(e))
-        # Redirect to the failure page
-        return redirect(url_for('account_creation_failed'))
-
-# Route for account creation success
-@app.route('/account_created')
-def account_created():
-    return redirect("https://jvrana1.github.io/PLNRU.github.io/success")
-
-# Route for account creation failure
-@app.route('/account_creation_failed')
-def account_creation_failed():
-    return redirect("https://jvrana1.github.io/PLNRU.github.io/failure")
-
-if __name__ == '__main__':
-    app.run(debug=True)
-
-# Route for password reset
-@app.route('/reset', methods=['POST'])
-def reset_password():
-    # Get the username from the reset form
-    reset_username = request.form['reset_username']
-
-    # TODO: Look up the user's email address from the database
-
-    # Generate a temporary password
-    temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-
-    # TODO: Update the user's password in the database
-
-    # Send the temporary password via email
-    if send_email(reset_username, temp_password, user_email):
-        return "Password reset successful. Check your email for the temporary password."
+# Home route
+@app.route('/')
+def home():
+    if is_user_logged_in():
+        # Implement your logic for logged-in users here
+        return render_template('home.html')
     else:
-        return "Password reset failed. Please try again."
+        # Implement your logic for non-logged-in users here
+        return render_template('login.html')
+
+# Login route
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        # Login logic here
+        # Assuming login is successful and you have the user's ID, set it in the session
+        session['user_id'] = user_id  # Replace 'user_id' with the actual user's ID
+        flash('Login successful!', 'success')
+
+        # Redirect to the user's profile or another page
+        return redirect(url_for('home'))
+
+    return render_template('login.html')
+
+# Registration route
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+
+        # Check if username or email already exists
+        existing_user = User.query.filter_by(username=username).first()
+        existing_email = User.query.filter_by(email=email).first()
+
+        if existing_user:
+            # Username is already in use
+            flash('Username is already taken. Please choose another.')
+            return redirect(url_for('register'))  # Use url_for to specify the route
+
+        if existing_email:
+            # Email is already in use
+            flash('Email is already registered. Please use a different email.')
+            return redirect(url_for('register'))  # Use url_for to specify the route
+
+        # If both username and email are unique, you can proceed with user registration
+        # Save the user's information to the database, hash their password, etc.
+        # Then, redirect to a success page or login page
+
+    return render_template('register.html')  # Use the correct template name
+
+
+# Profile route
+@app.route('/profile')
+def profile():
+    # Your profile logic here
+    return render_template('profile.html')
+
+# Edit Profile route
+@app.route('/edit-profile', methods=['GET', 'POST'])
+def edit_profile():
+    # Retrieve the user's current profile information from the database
+    # For example:
+    user_id = session.get('user_id')  # Replace 'user_id' with the actual key used in your session
+    user = User.query.get(user_id)
+
+    if request.method == 'POST':
+        # Update the user's profile information with user-submitted data
+        user.email = request.form['email']
+        user.school = request.form['school']
+
+        # Save the changes to the database
+        db.session.commit()
+
+        flash('Profile updated successfully!', 'success')
+
+        # Redirect the user to their profile page or another appropriate page
+        return redirect(url_for('profile'))
+
+    # Render the edit profile form with pre-filled data
+    return render_template('edit_profile.html', email=user.email, school=user.school)
+
+# Tasks route
+@app.route('/tasks')
+def tasks():
+    # Retrieve tasks from the database (adjust based on your database structure)
+    tasks = Task.query.all()
+    return render_template('tasks.html', tasks=tasks)
+
+# Edit Task route
+@app.route('/edit-task/<int:task_id>', methods=['GET', 'POST'])
+def edit_task(task_id):
+    # Retrieve the task to edit from the database (adjust based on your database structure)
+    task = Task.query.get(task_id)
+
+    if request.method == 'POST':
+        # Update the task with user-submitted data
+        task.title = request.form['title']
+        task.description = request.form['description']
+
+        # Save the changes to the database
+        db.session.commit()
+
+        flash('Task updated successfully!', 'success')
+        return redirect(url_for('tasks'))  # Redirect to the tasks page
+
+    return render_template('edit_task.html', task=task)
+
+@app.route('/update_task/<int:task_id>', methods=['POST'])
+def update_task(task_id):
+    if request.method == 'POST':
+        # Get form data
+        title = request.form.get('title')
+        description = request.form.get('description')
+        due_date = request.form.get('due_date')
+        priority = request.form.get('priority')
+
+        # Update the task in the database
+        if update_task_function(task_id, title, description, due_date, priority):
+            flash('Task updated successfully', 'success')
+        else:
+            flash('Failed to update task', 'error')
+
+    # Redirect back to the tasks page or the task details page
+    return redirect(url_for('tasks'))
+
+# Custom error handler for 404 Not Found
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('404.html'), 404
+
+# Custom error handler for 500 Internal Server Error
+@app.errorhandler(500)
+def internal_server_error(error):
+    return render_template('500.html'), 500
+
+# Your other routes and views...
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)

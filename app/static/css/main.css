@@ -1,0 +1,16 @@
+/* Add this CSS to your stylesheets (e.g., main.css) */
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+    font-size: 12px;
+}
+
+.left-content {
+    flex-grow: 1;
+}
+
+.right-content {
+    flex-shrink: 0;
+}
